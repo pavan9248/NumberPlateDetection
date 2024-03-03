@@ -8,5 +8,5 @@ flask
 python-multipart
 tensorflow
 requests
-
+easyocr
 

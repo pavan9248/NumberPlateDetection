@@ -59,11 +59,68 @@ async def upload_image( request: Request,image_file: UploadFile = File(...)):
     
     predictions = process_image(image_path,image_file.filename)
     
+    image_path = "./static/output.jpg"
+    extracted_text = extract_text_from_red_box(image_path)
+    print("/nExtracted Text from Red Box:", extracted_text)
+
     context = {
         "request": request,
     }
 
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("result.html", context)
+
+def extract_text_from_red_box(image_path):
+        
+        # Load the image
+        image = cv2.imread(image_path)
+
+        # Convert the image to HSV color space
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+        # Define lower and upper bounds for red color in HSV
+        lower_red = (0, 100, 100)
+        upper_red = (10, 255, 255)
+
+        # Threshold the HSV image to get only red regions
+        mask = cv2.inRange(hsv_image, lower_red, upper_red)
+
+        # Find contours in the mask
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Iterate through contours to find the bounding box of the largest red area
+        largest_area = 0
+        largest_contour = None
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area > largest_area:
+                largest_area = area
+                largest_contour = contour
+
+        # Get the bounding box of the largest red area
+        if largest_contour is not None:
+            x, y, w, h = cv2.boundingRect(largest_contour)
+
+            # Crop the region of interest from the original image
+            cropped_image = image[y:y+h, x:x+w]
+
+            # Perform OCR on the cropped region
+            reader = easyocr.Reader(['en'])
+            result = reader.readtext(cropped_image)
+
+            # Extract text from OCR result
+            extracted_text = ""
+            for detection in result:
+                extracted_text += detection[1] + " "
+
+            return extracted_text.strip()
+
+        else:
+            return "No red bounding box found"
+
+
+
+
+
 
 def process_image(file_path,imgname):
                         
