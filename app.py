@@ -11,6 +11,7 @@ import requests
 import subprocess
 import shutil
 from fastapi.responses import RedirectResponse
+import easyocr
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -62,9 +63,17 @@ async def upload_image( request: Request,image_file: UploadFile = File(...)):
     image_path = "./static/output.jpg"
     extracted_text = extract_text_from_red_box(image_path)
     print("/nExtracted Text from Red Box:", extracted_text)
+    
+    words = extracted_text.split()
+    modified_text=''
+    if len(words) >= 2:
+        modified_text = ' '.join(words[2:])
+        
 
+        
     context = {
         "request": request,
+        "extracted_text":modified_text
     }
 
     return templates.TemplateResponse("result.html", context)
