@@ -89,19 +89,20 @@
 
 .healthy-food-section-img {
     width: 280px;
+    height: 350px;
 }
 
 .healthy-food-section-heading {
     color: #183b56;
     font-family: "Roboto";
-    font-size: 38px;
+    font-size: 32px;
     font-weight: 700;
 }
 
 .healthy-food-section-description {
     color: #5a7184;
     font-family: "Roboto";
-    font-size: 22px;
+    font-size: 20px;
 }
 
 .custom-button {

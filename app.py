@@ -10,6 +10,7 @@ import os
 import requests
 import subprocess
 import shutil
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -21,21 +22,25 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 @app.get('/')
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.get('/open')
-def index(request: Request):
     return templates.TemplateResponse("open.html", {"request": request})
+
+@app.get('/index')
+def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get('/login')
-def index(request: Request):
+def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 @app.get('/sign')
-def index(request: Request):
+def sign(request: Request):
     return templates.TemplateResponse("signup.html", {"request": request})
 
+
+@app.post("/login")
+def login():
+    return RedirectResponse("/index", status_code=303)
 
     
 
@@ -52,26 +57,24 @@ async def upload_image( request: Request,image_file: UploadFile = File(...)):
         content = await image_file.read()
         image.write(content)
     
-    predictions = process_image(image_path)
+    predictions = process_image(image_path,image_file.filename)
     
-    # context = {
-    #     "request": request,
-    #     "predictions": predictions,
-    #     "uploaded_image": image_path    
-    # }
+    context = {
+        "request": request,
+    }
 
-    # return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("index.html", context)
 
-def process_image(file_path):
+def process_image(file_path,imgname):
                         
     source_image = file_path
     weights_path = 'yolov5/model.pt'
     det_path='yolov5/detect.py'
-    run_detection(source_image, weights_path,det_path)
+    run_detection(source_image, weights_path,det_path,imgname)
     
 
 
-def run_detection(source_image, weights_path,det_path):
+def run_detection(source_image, weights_path,det_path,imgname):
     
     command = ["python", det_path, "--source", source_image, "--weights", weights_path]
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -98,8 +101,9 @@ def run_detection(source_image, weights_path,det_path):
 
     # Get the full path of the latest exp folder
     latest_exp_folder = os.path.join("yolov5/runs/detect", latest_exp_folder)
+     
+    os.rename(f"{latest_exp_folder}/{imgname}",f"{latest_exp_folder}/output.jpg")
 
-    
     destination_folder = "static"
     output_file = "output.jpg"
 
